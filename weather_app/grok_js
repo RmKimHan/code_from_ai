@@ -1,0 +1,44 @@
+const weatherResult = document.getElementById('weatherResult');
+const regionName = document.getElementById('regionName');
+const dateTime = document.getElementById('dateTime');
+const condition = document.getElementById('condition');
+const temperature = document.getElementById('temperature');
+const humidity = document.getElementById('humidity');
+const wind = document.getElementById('wind');
+
+function getWeather() {
+    const regionCode = document.getElementById('regionSelect').value;
+    const regionNames = {
+        "3174": "Jakarta Selatan",
+        "3173": "Jakarta Barat",
+        "3172": "Jakarta Utara"
+        // Add more codes and names as needed
+    };
+    const apiUrl = `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${regionCode}`;
+
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Region not found or API error!");
+            }
+            return response.json(); // Adjust to response.text() if XML is returned
+        })
+        .then(data => {
+            // Note: BMKG API structure may vary. This is a placeholder based on typical weather API response.
+            // You may need to adjust the data parsing based on actual BMKG API response.
+            regionName.textContent = regionNames[regionCode];
+            dateTime.textContent = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+            condition.textContent = data.weather[0]?.description || "Data unavailable";
+            temperature.textContent = data.main?.temp || "N/A";
+            humidity.textContent = data.main?.humidity || "N/A";
+            wind.textContent = data.wind?.speed || "N/A";
+            weatherResult.style.display = "block";
+        })
+        .catch(error => {
+            alert(error.message);
+            weatherResult.style.display = "none";
+        });
+}
+
+// Display current time on load
+dateTime.textContent = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
