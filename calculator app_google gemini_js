@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Sederhana</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Pastikan tinggi body minimal 100vh untuk centering */
+            min-height: 100vh;
+        }
+        /* Custom styling for calculator display to prevent overflow */
+        #display {
+            white-space: nowrap; /* Mencegah teks wrapping */
+            overflow-x: auto; /* Mengaktifkan scroll horizontal jika teks terlalu panjang */
+            -webkit-overflow-scrolling: touch; /* Untuk smooth scrolling di iOS */
+            scrollbar-width: none; /* Menyembunyikan scrollbar untuk Firefox */
+            -ms-overflow-style: none;  /* Menyembunyikan scrollbar untuk IE/Edge */
+        }
+        /* Menyembunyikan scrollbar untuk Chrome, Safari, Opera */
+        #display::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center p-4">
+    <div class="calculator bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm">
+        <!-- Display Area -->
+        <div id="display" class="bg-gray-700 text-white text-5xl font-bold text-right p-4 mb-4 rounded-lg overflow-hidden h-20 flex items-center justify-end">
+            0
+        </div>
+
+        <!-- Buttons Grid -->
+        <div class="grid grid-cols-4 gap-3">
+            <!-- Row 1 -->
+            <button class="col-span-1 bg-gray-500 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="clearDisplay()">C</button>
+            <button class="col-span-1 bg-orange-500 text-white text-2xl p-4 rounded-full hover:bg-orange-600 transition-colors duration-200" onclick="appendOperator('/')">/</button>
+            <button class="col-span-1 bg-orange-500 text-white text-2xl p-4 rounded-full hover:bg-orange-600 transition-colors duration-200" onclick="appendOperator('*')">*</button>
+            <button class="col-span-1 bg-orange-500 text-white text-2xl p-4 rounded-full hover:bg-orange-600 transition-colors duration-200" onclick="appendOperator('-')">-</button>
+
+            <!-- Row 2 -->
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('7')">7</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('8')">8</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('9')">9</button>
+            <button class="col-span-1 bg-orange-500 text-white text-2xl p-4 rounded-full hover:bg-orange-600 transition-colors duration-200" onclick="appendOperator('+')">+</button>
+
+            <!-- Row 3 -->
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('4')">4</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('5')">5</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('6')">6</button>
+            <!-- Placeholder for alignment, or can be used for another operator if needed -->
+            <div class="col-span-1"></div> 
+
+            <!-- Row 4 -->
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('1')">1</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('2')">2</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendNumber('3')">3</button>
+            <button class="col-span-1 bg-orange-500 text-white text-2xl p-4 rounded-full hover:bg-orange-600 transition-colors duration-200" onclick="calculateResult()">=</button>
+
+            <!-- Row 5 (0 and .) -->
+            <button class="col-span-2 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200 text-left pl-8" onclick="appendNumber('0')">0</button>
+            <button class="col-span-1 bg-gray-700 text-white text-2xl p-4 rounded-full hover:bg-gray-600 transition-colors duration-200" onclick="appendDecimal()">.</button>
+            <!-- The equals button spans 2 columns, so we need to adjust the grid.
+                 It's placed in the previous row to maintain the 4-column structure visually.
+                 This div is a placeholder to ensure the grid aligns correctly. -->
+            <div class="col-span-1"></div> 
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let waitingForNewNumber = false; // Flag to indicate if the next input should start a new number
+
+        /**
+         * Memperbarui tampilan kalkulator.
+         * @param {string} value - Nilai yang akan ditampilkan.
+         */
+        function updateDisplay(value) {
+            display.textContent = value;
+        }
+
+        /**
+         * Menambahkan angka ke input saat ini.
+         * @param {string} number - Angka yang akan ditambahkan.
+         */
+        function appendNumber(number) {
+            if (display.textContent === 'Error') {
+                clearDisplay(); // Reset jika ada error
+            }
+
+            if (waitingForNewNumber) {
+                currentInput = number;
+                waitingForNewNumber = false;
+            } else {
+                if (currentInput === '0' && number !== '.') {
+                    currentInput = number; // Ganti '0' awal dengan angka baru
+                } else {
+                    currentInput += number;
+                }
+            }
+            updateDisplay(currentInput);
+        }
+
+        /**
+         * Menambahkan operator ke input.
+         * @param {string} op - Operator yang akan ditambahkan.
+         */
+        function appendOperator(op) {
+            if (display.textContent === 'Error') {
+                // Jika ada error, reset dan mulai dengan angka yang ada jika ada, lalu tambahkan operator
+                clearDisplay();
+                if (currentInput !== '0') {
+                    previousInput = currentInput;
+                    operator = op;
+                    waitingForNewNumber = true;
+                }
+                return;
+            }
+
+            if (operator && !waitingForNewNumber) {
+                // Jika sudah ada operator dan bukan menunggu angka baru, hitung dulu hasilnya
+                calculateResult();
+                previousInput = display.textContent; // Hasil perhitungan menjadi previousInput
+                operator = op;
+                waitingForNewNumber = true;
+            } else if (currentInput !== '0' || previousInput !== '') {
+                // Jika belum ada operator, atau sudah ada tapi sedang menunggu angka baru
+                previousInput = currentInput;
+                operator = op;
+                waitingForNewNumber = true;
+            }
+            // Jika display masih '0' dan tidak ada previousInput, jangan lakukan apa-apa
+        }
+
+        /**
+         * Menambahkan titik desimal ke input saat ini.
+         */
+        function appendDecimal() {
+            if (display.textContent === 'Error') {
+                clearDisplay();
+            }
+           
+            if (waitingForNewNumber) {
+                currentInput = '0.'; // Mulai angka baru dengan '0.'
+                waitingForNewNumber = false;
+            } else if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+            updateDisplay(currentInput);
+        }
+
+        /**
+         * Menghitung hasil operasi.
+         */
+        function calculateResult() {
+            if (!operator || previousInput === '') {
+                return; // Tidak ada operasi untuk dihitung
+            }
+
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(current)) {
+                updateDisplay('Error');
+                resetState();
+                return;
+            }
+
+            switch (operator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        updateDisplay('Error'); // Pembagian dengan nol
+                        resetState();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    updateDisplay('Error');
+                    resetState();
+                    return;
+            }
+
+            // Batasi jumlah desimal untuk hasil yang lebih rapi
+            result = parseFloat(result.toFixed(10)); // Batasi hingga 10 desimal
+
+            updateDisplay(result.toString());
+            currentInput = result.toString();
+            previousInput = '';
+            operator = null;
+            waitingForNewNumber = true; // Siap untuk input angka baru setelah hasil
+        }
+
+        /**
+         * Mengatur ulang semua variabel state kalkulator.
+         */
+        function resetState() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            waitingForNewNumber = false;
+        }
+
+        /**
+         * Membersihkan tampilan dan mereset kalkulator.
+         */
+        function clearDisplay() {
+            resetState();
+            updateDisplay('0');
+        }
+
+        // Inisialisasi tampilan saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDisplay(currentInput);
+        });
+    </script>
+</body>
+</html>
+
+Update logic kalkulator
+
